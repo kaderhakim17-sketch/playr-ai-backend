@@ -2,36 +2,84 @@ from fastapi import FastAPI, UploadFile, File
 
 app = FastAPI()
 
+# --------------------
+
+# ROOT CHECK
+
+# --------------------
+
 @app.get("/")
 
 def home():
 
     return {"message": "Playr AI backend is running"}
 
-@app.post("/analyze-match")
+# --------------------
 
-async def analyze_match(file: UploadFile = File(...)):
+# HEALTH CHECK (IMPORTANT FOR DEPLOYMENT)
+
+# --------------------
+
+@app.get("/health")
+
+def health():
+
+    return {"status": "ok"}
+
+# --------------------
+
+# ANALYZE MATCH ENDPOINT
+
+# --------------------
+
+@app.post("/analyze")
+
+async def analyze(file: UploadFile = File(...)):
+
+    # NOTE:
+
+    # This is placeholder data for now.
+
+    # Later we replace this with real AI/video analysis logic.
 
     return {
 
-        "player_7": {
+        "match_status": "processed",
 
-            "passes": 18,
+        "players": {
 
-            "shots": 2,
+            "player_7": {
 
-            "distance_km": 7.8
+                "passes": 18,
+
+                "shots": 2,
+
+                "distance_km": 7.8,
+
+                "rating": 7.1
+
+            },
+
+            "player_10": {
+
+                "passes": 25,
+
+                "shots": 4,
+
+                "distance_km": 9.1,
+
+                "rating": 8.3
+
+            }
 
         },
 
-        "player_10": {
+        "insights": [
 
-            "passes": 25,
+            "Player 10 was the most creative attacker",
 
-            "shots": 4,
+            "Player 7 maintained strong midfield control"
 
-            "distance_km": 9.1
-
-        }
+        ]
 
     }
