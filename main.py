@@ -48,3 +48,4 @@ async def analyze(file: UploadFile = File(...)):
             "Ready for AI upgrade stage"
         ]
     }
+    
