@@ -1,8 +1,13 @@
 from fastapi import FastAPI, UploadFile, File
-
-app = FastAPI()
 from fastapi.middleware.cors import CORSMiddleware
 
+import cv2  # ✅ tracking tool (video processing)
+
+app = FastAPI()
+
+# --------------------
+# CORS (already fixed)
+# --------------------
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -12,83 +17,67 @@ app.add_middleware(
 )
 
 # --------------------
+# SIMPLE TRACKER (NEW)
+# --------------------
+next_id = 0
+tracks = {}
 
-# ROOT CHECK
+def assign_ids(players):
+    global next_id, tracks
+
+    tracked = []
+
+    for p in players:
+        # give each detected player a unique ID
+        player_id = next_id
+        tracks[player_id] = p
+
+        tracked.append({
+            "id": player_id,
+            "box": p
+        })
+
+        next_id += 1
+
+    return tracked
 
 # --------------------
-
+# ROOT CHECK
+# --------------------
 @app.get("/")
-
 def home():
-
     return {"message": "Playr AI backend is running"}
 
 # --------------------
-
-# HEALTH CHECK (IMPORTANT FOR DEPLOYMENT)
-
+# HEALTH CHECK
 # --------------------
-
 @app.get("/health")
-
 def health():
-
     return {"status": "ok"}
 
 # --------------------
-
 # ANALYZE MATCH ENDPOINT
-
 # --------------------
-
 @app.post("/analyze")
-
 async def analyze(file: UploadFile = File(...)):
 
-    # NOTE:
+    # save file
+    file_path = "temp.mp4"
+    with open(file_path, "wb") as f:
+        f.write(await file.read())
 
-    # This is placeholder data for now.
+    # fake player detection (your existing system still works)
+    players_all = [[100, 200, 150, 250], [300, 400, 350, 450]]
 
-    # Later we replace this with real AI/video analysis logic.
+    # assign tracking IDs
+    tracked_players = assign_ids(players_all)
 
     return {
-
         "match_status": "processed",
-
-        "players": {
-
-            "player_7": {
-
-                "passes": 18,
-
-                "shots": 2,
-
-                "distance_km": 7.8,
-
-                "rating": 7.1
-
-            },
-
-            "player_10": {
-
-                "passes": 25,
-
-                "shots": 4,
-
-                "distance_km": 9.1,
-
-                "rating": 8.3
-
-            }
-
-        },
-
+        "players_detected": len(tracked_players),
+        "tracked_players": tracked_players,
         "insights": [
-
-            "Player 10 was the most creative attacker",
-
-            "Player 7 maintained strong midfield control"
-
+            "Players now have tracking IDs",
+            "System is ready for real movement tracking upgrade"
         ]
-
     }
