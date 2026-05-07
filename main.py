@@ -1,12 +1,14 @@
 from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from ultralytics import YOLO
-from PIL import Image
-import io
+import cv2
+import tempfile
 
 app = FastAPI()
 
-# CORS (frontend connection)
+# --------------------
+# CORS (allow frontend connection)
+# --------------------
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -15,55 +17,73 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Load YOLO model (AI brain)
+# --------------------
+# LOAD YOLO MODEL
+# --------------------
 model = YOLO("yolov8n.pt")
 
 # --------------------
-# ROOT
+# ROOT CHECK
 # --------------------
 @app.get("/")
 def home():
     return {"message": "Playr AI backend running"}
 
 # --------------------
-# HEALTH
+# HEALTH CHECK
 # --------------------
 @app.get("/health")
 def health():
     return {"status": "ok"}
 
 # --------------------
-# AI PLAYER DETECTION
+# VIDEO ANALYSIS
 # --------------------
 @app.post("/analyze")
 async def analyze(file: UploadFile = File(...)):
 
-    # read uploaded file as image frame (simple start)
-    content = await file.read()
-    image = Image.open(io.BytesIO(content))
+    # save uploaded video temporarily
+    temp_video = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4")
+    temp_video.write(await file.read())
+    temp_video.close()
 
-    # run YOLO detection
-    results = model(image)
+    # open video
+    cap = cv2.VideoCapture(temp_video.name)
 
-    players = []
+    players_detected = 0
+    detections = []
 
-    for r in results:
-        for box in r.boxes:
-            cls = int(box.cls[0])
+    # read first frame only
+    success, frame = cap.read()
 
-            # class 0 = person
-            if cls == 0:
-                players.append({
-                    "box": box.xyxy[0].tolist()
-                })
+    if success:
+
+        # run YOLO on frame
+        results = model(frame)
+
+        for r in results:
+            for box in r.boxes:
+
+                cls = int(box.cls[0])
+
+                # class 0 = person
+                if cls == 0:
+
+                    players_detected += 1
+
+                    detections.append({
+                        "box": box.xyxy[0].tolist()
+                    })
+
+    cap.release()
 
     return {
         "match_status": "processed",
-        "players_detected": len(players),
-        "detections": players,
+        "players_detected": players_detected,
+        "detections": detections,
         "insights": [
+            "Video frame scanned successfully",
             "YOLO player detection active",
-            "AI is now recognising people in frames",
-            "Next upgrade: full video tracking"
+            "Next upgrade: full frame-by-frame tracking"
         ]
     }
